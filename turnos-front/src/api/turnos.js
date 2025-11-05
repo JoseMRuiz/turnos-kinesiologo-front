@@ -1,16 +1,13 @@
 import api from "./Client";
 
-export const getTurnos = async () => {
-  const res = await api.get("/turnos/");
-  return res.data;
-};
+// Obtener todos los turnos
+export const getTurnos = () => api.get("/turnos/");
 
-export const crearTurno = async (turno) => {
-  const res = await api.post("/turnos/", turno);
-  return res.data;
-};
+// Crear un nuevo turno
+export const createTurno = (data) => api.post("/turnos/", data);
 
-export const cambiarEstadoTurno = async (id, estado) => {
-  const res = await api.put(`/turnos/${id}/estado`, { estado });
-  return res.data;
+// Cambiar el estado de un turno
+export const updateEstadoTurno = (turnoId, data) => {
+  
+  return api.put(`/turnos/${turnoId}/estado`, data);
 };

@@ -1,150 +1,181 @@
 import { useEffect, useState } from "react";
 import MainLayout from "../components/layout/MainLayout";
-import { Users, Calendar, TrendingUp, Clock } from "lucide-react";
-import api from "../api/Client";
+import { getUsers } from "../api/users";
+import { getTurnos } from "../api/turnos";
+import {
+  Users,
+  CalendarDays,
+  Activity,
+  Clock,
+} from "lucide-react";
 
-export default function Dashboard() {
-  const [user, setUser] = useState(null);
+export default function DashboardAdmin() {
+  const [users, setUsers] = useState([]);
+  const [turnos, setTurnos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  // 🔹 Cargar info del usuario autenticado
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await api.get("/users/me");
-        setUser(res.data);
-      } catch (err) {
-        console.error("❌ Error cargando usuario:", err);
-        setError("Error al cargar el perfil.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUser();
-  }, []);
-
-  if (loading) {
-    return (
-      <MainLayout>
-        <p className="text-gray-600">Cargando datos del usuario...</p>
-      </MainLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <MainLayout>
-        <p className="text-red-600">{error}</p>
-      </MainLayout>
-    );
-  }
-
-  if (!user) {
-    return (
-      <MainLayout>
-        <p className="text-gray-600">No se encontró información del usuario.</p>
-      </MainLayout>
-    );
-  }
-
-  // 🔹 Render dinámico por rol
-  const renderContentByRole = () => {
-    switch (user.role?.name) {
-      case "admin":
-        return (
-          <div className="bg-white rounded-lg shadow border p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">Panel de Administrador</h2>
-            <p className="text-gray-600">Aquí podrás gestionar usuarios, roles y estadísticas generales.</p>
-          </div>
-        );
-
-      case "recepcionista":
-        return (
-          <div className="bg-white rounded-lg shadow border p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">Panel de Recepción</h2>
-            <p className="text-gray-600">Acceso a turnos, pacientes y agenda del día.</p>
-          </div>
-        );
-
-      case "kinesiologo":
-        return (
-          <div className="bg-white rounded-lg shadow border p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">Panel del Kinesiólogo</h2>
-            <p className="text-gray-600">Aquí podrás ver tus turnos asignados y registrar sesiones.</p>
-          </div>
-        );
-
-      case "paciente":
-        return (
-          <div className="bg-white rounded-lg shadow border p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">Panel del Paciente</h2>
-            <p className="text-gray-600">Visualiza tus turnos y seguimientos con tu kinesiólogo.</p>
-          </div>
-        );
-
-      default:
-        return (
-          <div className="bg-white rounded-lg shadow border p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">Panel General</h2>
-            <p className="text-gray-600">Bienvenido al sistema.</p>
-          </div>
-        );
+  const loadData = async () => {
+    try {
+      const [resUsers, resTurnos] = await Promise.all([getUsers(), getTurnos()]);
+      setUsers(resUsers.data);
+      setTurnos(resTurnos.data);
+    } catch (err) {
+      console.error("Error cargando datos del dashboard:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  if (loading)
+    return (
+      <MainLayout>
+        <p className="p-6 text-gray-600">Cargando datos...</p>
+      </MainLayout>
+    );
+
+  // --- Fecha actual ---
+  const hoy = new Date().toISOString().split("T")[0];
+
+  // --- Filtrados por rol (útil para métricas secundarias) ---
+  const pacientes = users.filter((u) => u.role?.name === "paciente");
+  const kinesiologos = users.filter((u) => u.role?.name === "kinesiologo");
+  const recepcionistas = users.filter((u) => u.role?.name === "recepcionista");
+
+  // --- Turnos ---
+  const turnosHoy = turnos.filter((t) => t.fecha === hoy);
+  const turnosConfirmados = turnos.filter((t) => t.estado === "confirmado");
+  const tasaConfirmacion = turnos.length
+    ? Math.round((turnosConfirmados.length / turnos.length) * 100)
+    : 0;
+
+  // --- Usuarios con turno próximo ---
+  const usuariosConTurnoProximo = new Set(
+    turnos
+      .filter(
+        (t) =>
+          (t.estado === "pendiente" || t.estado === "confirmado") &&
+          new Date(t.fecha) >= new Date()
+      )
+      .flatMap((t) => [t.paciente?.id, t.kinesiologo?.id])
+  ).size;
+
+  // --- Tiempo promedio simulado ---
+  const tiempoPromedio = "45 min";
+
+  // --- Últimos turnos ---
+  const ultimosTurnos = [...turnos]
+    .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+    .slice(0, 5);
+
   return (
     <MainLayout>
-      <div className="space-y-6">
+      <div className="p-6 space-y-8">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-semibold text-gray-900">
-            Panel de Control
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Bienvenido, {user.nombre} ({user.role?.name})
-          </p>
-        </div>
+        <header>
+          <h1 className="text-3xl font-semibold text-gray-900">Panel de Control</h1>
+          <p className="text-gray-600 mt-1">Bienvenido, Administrador.</p>
+        </header>
 
-        {/* Estadísticas generales (solo admin o recepcionista) */}
-        {(user.role?.name === "admin" || user.role?.name === "recepcionista") && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="p-4 bg-white rounded-lg shadow border flex items-center gap-3">
-              <Users className="w-6 h-6 text-blue-600" />
-              <div>
-                <p className="text-sm text-gray-500">Pacientes Activos</p>
-                <p className="text-2xl font-bold text-gray-900">127</p>
-              </div>
-            </div>
-
-            <div className="p-4 bg-white rounded-lg shadow border flex items-center gap-3">
-              <Calendar className="w-6 h-6 text-blue-600" />
-              <div>
-                <p className="text-sm text-gray-500">Citas Hoy</p>
-                <p className="text-2xl font-bold text-gray-900">8</p>
-              </div>
-            </div>
-
-            <div className="p-4 bg-white rounded-lg shadow border flex items-center gap-3">
-              <TrendingUp className="w-6 h-6 text-blue-600" />
-              <div>
-                <p className="text-sm text-gray-500">Tasa de Recuperación</p>
-                <p className="text-2xl font-bold text-gray-900">94%</p>
-              </div>
-            </div>
-
-            <div className="p-4 bg-white rounded-lg shadow border flex items-center gap-3">
-              <Clock className="w-6 h-6 text-blue-600" />
-              <div>
-                <p className="text-sm text-gray-500">Tiempo Promedio</p>
-                <p className="text-2xl font-bold text-gray-900">45min</p>
-              </div>
+        {/* Tarjetas de métricas */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="flex items-center bg-white border shadow-sm rounded-lg p-5">
+            <Users className="w-8 h-8 text-blue-500 mr-3" />
+            <div>
+              <p className="text-gray-600 text-sm">Usuarios con turno próximo</p>
+              <p className="text-2xl font-semibold text-gray-800">
+                {usuariosConTurnoProximo}
+              </p>
             </div>
           </div>
-        )}
 
-        {/* Contenido dinámico según el rol */}
-        {renderContentByRole()}
+          <div className="flex items-center bg-white border shadow-sm rounded-lg p-5">
+            <CalendarDays className="w-8 h-8 text-purple-500 mr-3" />
+            <div>
+              <p className="text-gray-600 text-sm">Citas hoy</p>
+              <p className="text-2xl font-semibold text-gray-800">{turnosHoy.length}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center bg-white border shadow-sm rounded-lg p-5">
+            <Activity className="w-8 h-8 text-green-500 mr-3" />
+            <div>
+              <p className="text-gray-600 text-sm">Tasa de Confirmación</p>
+              <p className="text-2xl font-semibold text-gray-800">
+                {tasaConfirmacion}%
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center bg-white border shadow-sm rounded-lg p-5">
+            <Clock className="w-8 h-8 text-orange-500 mr-3" />
+            <div>
+              <p className="text-gray-600 text-sm">Tiempo promedio</p>
+              <p className="text-2xl font-semibold text-gray-800">
+                {tiempoPromedio}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Últimos turnos */}
+        <section className="bg-white border rounded-lg shadow-sm p-6">
+          <h2 className="text-lg font-semibold mb-4">Últimos turnos registrados</h2>
+
+          {ultimosTurnos.length === 0 ? (
+            <p className="text-gray-500 text-sm">No hay turnos registrados.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full border border-gray-200 rounded-md">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-sm text-gray-700">
+                      Paciente
+                    </th>
+                    <th className="px-4 py-2 text-left text-sm text-gray-700">
+                      Kinesiólogo
+                    </th>
+                    <th className="px-4 py-2 text-left text-sm text-gray-700">
+                      Fecha
+                    </th>
+                    <th className="px-4 py-2 text-left text-sm text-gray-700">
+                      Estado
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ultimosTurnos.map((t) => (
+                    <tr key={t.id} className="border-t hover:bg-gray-50">
+                      <td className="px-4 py-2 text-sm">
+                        {t.paciente?.nombre || "—"}
+                      </td>
+                      <td className="px-4 py-2 text-sm">
+                        {t.kinesiologo?.nombre || "—"}
+                      </td>
+                      <td className="px-4 py-2 text-sm">{t.fecha}</td>
+                      <td className="px-4 py-2 text-sm capitalize">
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-medium ${
+                            t.estado === "confirmado"
+                              ? "bg-green-100 text-green-700"
+                              : t.estado === "pendiente"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : "bg-red-100 text-red-700"
+                          }`}
+                        >
+                          {t.estado}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
       </div>
     </MainLayout>
   );

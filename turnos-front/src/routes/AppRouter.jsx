@@ -2,11 +2,13 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Dashboard from "../pages/Dashboard";
-import Pacientes from "../pages/Pacientes";
+
 import Citas from "../pages/Citas";
 import Reportes from "../pages/Reportes";
 import { useAuth } from "../context/AuthContext"; // 👈 Importá tu contexto
-
+import Roles from "../pages/Roles";
+import Usuarios from "../pages/Usuarios";
+import Turnos from "../pages/Turnos";
 // 🔒 Componente de protección de rutas
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -42,10 +44,18 @@ export default function AppRouter() {
           }
         />
         <Route
-          path="/pacientes"
+          path="/usuarios"
           element={
             <PrivateRoute>
-              <Pacientes />
+              <Usuarios />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/turnos"
+          element={
+            <PrivateRoute>
+              <Turnos />
             </PrivateRoute>
           }
         />
@@ -65,6 +75,14 @@ export default function AppRouter() {
             </PrivateRoute>
           }
         />
+        <Route
+  path="/roles"
+  element={
+    <PrivateRoute roles={["admin"]}>
+      <Roles />
+    </PrivateRoute>
+  }
+/>
 
         {/* Cualquier ruta desconocida redirige al login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
