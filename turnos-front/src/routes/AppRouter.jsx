@@ -7,13 +7,15 @@ import Dashboard from "../pages/Dashboard";
 import Usuarios from "../pages/Usuarios";
 import Turnos from "../pages/Turnos";
 import Citas from "../pages/Citas";
-import Reportes from "../pages/Reportes";
+
 import Roles from "../pages/Roles";
 import { KinesTurnosPage } from "../pages/KinesTurnosPage";
 import { RecepcionTurnosPage } from "../pages/RecepcionTurnosPage";
 
 // 🔒 Contexto de autenticación
 import { useAuth } from "../context/AuthContext";
+import AdminReportesTurnos from "../pages/ReportesTurnos";
+
 
 // =====================================
 // 🔐 Componente de ruta privada
@@ -97,7 +99,7 @@ export default function AppRouter() {
           path="/reportes"
           element={
             <PrivateRoute roles={["admin"]}>
-              <Reportes />
+              <AdminReportesTurnos />
             </PrivateRoute>
           }
         />
@@ -131,6 +133,7 @@ export default function AppRouter() {
             </PrivateRoute>
           }
         />
+        
 
         {/* 🔁 Ruta por defecto: redirige al login */}
         <Route path="*" element={<Navigate to="/login" replace />} />

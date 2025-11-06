@@ -1,13 +1,18 @@
 import api from "./Client";
 
-// Obtener todos los turnos
+// 🔹 Listar todos los turnos
 export const getTurnos = () => api.get("/turnos/");
 
-// Crear un nuevo turno
+// 🔹 Crear turno (paciente)
 export const createTurno = (data) => api.post("/turnos/", data);
 
-// Cambiar el estado de un turno
-export const updateEstadoTurno = (turnoId, data) => {
-  
-  return api.put(`/turnos/${turnoId}/estado`, data);
-};
+
+
+// 🔹 Cambiar estado (admin / recepcionista / kine)
+export const updateEstadoTurno = (turnoId, estado) =>
+  api.put(`/turnos/${turnoId}/estado`, { estado });
+
+
+
+// Paciente → obtiene solo sus turnos
+export const getMyTurnos = () => api.get("/turnos/mios");

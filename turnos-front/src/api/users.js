@@ -18,3 +18,4 @@ export const getRoles = () => api.get("/roles");
 export const createRole = (data) => api.post("/roles", data);
 
 
+export const getPacientes = () => api.get("/users/pacientes"); 
