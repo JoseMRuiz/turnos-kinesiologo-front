@@ -1,40 +1,58 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+
+// 🔹 Páginas
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Dashboard from "../pages/Dashboard";
-
-import Citas from "../pages/Citas";
-import Reportes from "../pages/Reportes";
-import { useAuth } from "../context/AuthContext"; // 👈 Importá tu contexto
-import Roles from "../pages/Roles";
 import Usuarios from "../pages/Usuarios";
 import Turnos from "../pages/Turnos";
-// 🔒 Componente de protección de rutas
-function PrivateRoute({ children }) {
+import Citas from "../pages/Citas";
+import Reportes from "../pages/Reportes";
+import Roles from "../pages/Roles";
+import { KinesTurnosPage } from "../pages/KinesTurnosPage";
+import { RecepcionTurnosPage } from "../pages/RecepcionTurnosPage";
+
+// 🔒 Contexto de autenticación
+import { useAuth } from "../context/AuthContext";
+
+// =====================================
+// 🔐 Componente de ruta privada
+// =====================================
+function PrivateRoute({ children, roles }) {
   const { user, loading } = useAuth();
 
   if (loading) {
     return <p className="text-center mt-10">Cargando...</p>;
   }
 
-  // 🔹 Si no hay usuario autenticado → redirige al login
+  // Si no hay usuario autenticado → redirige al login
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  // 🔹 Si hay usuario → muestra la vista protegida
+  // Si hay roles definidos, valida que el usuario tenga permiso
+  if (roles && !roles.includes(user.role?.name)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Si todo está OK → renderiza el contenido protegido
   return children;
 }
 
+// =====================================
+// 🧭 Ruteo principal de la app
+// =====================================
 export default function AppRouter() {
   return (
     <Router>
       <Routes>
-        {/* Rutas públicas */}
+        {/* 🔓 RUTAS PÚBLICAS */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Rutas privadas */}
+        {/* 🔒 RUTAS PRIVADAS (requieren autenticación) */}
+
+        {/* Dashboard */}
         <Route
           path="/dashboard"
           element={
@@ -43,6 +61,8 @@ export default function AppRouter() {
             </PrivateRoute>
           }
         />
+
+        {/* Usuarios */}
         <Route
           path="/usuarios"
           element={
@@ -51,6 +71,8 @@ export default function AppRouter() {
             </PrivateRoute>
           }
         />
+
+        {/* Turnos (genéricos / admin / recepcionista) */}
         <Route
           path="/turnos"
           element={
@@ -59,6 +81,8 @@ export default function AppRouter() {
             </PrivateRoute>
           }
         />
+
+        {/* Citas (paciente o uso general) */}
         <Route
           path="/citas"
           element={
@@ -67,24 +91,48 @@ export default function AppRouter() {
             </PrivateRoute>
           }
         />
+
+        {/* Reportes (solo admin) */}
         <Route
           path="/reportes"
           element={
-            <PrivateRoute>
+            <PrivateRoute roles={["admin"]}>
               <Reportes />
             </PrivateRoute>
           }
         />
-        <Route
-  path="/roles"
-  element={
-    <PrivateRoute roles={["admin"]}>
-      <Roles />
-    </PrivateRoute>
-  }
-/>
 
-        {/* Cualquier ruta desconocida redirige al login */}
+        {/* Roles (solo admin) */}
+        <Route
+          path="/roles"
+          element={
+            <PrivateRoute roles={["admin"]}>
+              <Roles />
+            </PrivateRoute>
+          }
+        />
+
+        {/* Recepcionista */}
+        <Route
+          path="/recep"
+          element={
+            <PrivateRoute roles={["recepcionista"]}>
+              <RecepcionTurnosPage />
+            </PrivateRoute>
+          }
+        />
+
+        {/* Kinesiólogo */}
+        <Route
+          path="/kines"
+          element={
+            <PrivateRoute roles={["kinesiologo"]}>
+              <KinesTurnosPage />
+            </PrivateRoute>
+          }
+        />
+
+        {/* 🔁 Ruta por defecto: redirige al login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>

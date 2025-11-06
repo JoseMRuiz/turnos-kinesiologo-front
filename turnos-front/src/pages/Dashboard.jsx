@@ -77,7 +77,7 @@ export default function DashboardAdmin() {
         {/* Header */}
         <header>
           <h1 className="text-3xl font-semibold text-gray-900">Panel de Control</h1>
-          <p className="text-gray-600 mt-1">Bienvenido, Administrador.</p>
+          <p className="text-gray-600 mt-1">Bienvenido.</p>
         </header>
 
         {/* Tarjetas de métricas */}

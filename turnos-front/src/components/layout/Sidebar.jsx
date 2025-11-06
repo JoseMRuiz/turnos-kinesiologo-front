@@ -28,11 +28,12 @@ export default function Sidebar({ user }) {
           { name: "Dashboard", icon: <LayoutDashboard />, path: "/dashboard" },
           { name: "Pacientes", icon: <Users />, path: "/usuarios" },
           { name: "Citas", icon: <Calendar />, path: "/turnos" },
+          { name: "Recep", icon: <Calendar />, path: "/recep" },
         ];
       case "kinesiologo":
         return [
           { name: "Dashboard", icon: <LayoutDashboard />, path: "/dashboard" },
-          { name: "Mis Turnos", icon: <Calendar />, path: "/citas" },
+          { name: "Mis turnos", icon: <Calendar />, path: "/kines" },
         ];
       case "paciente":
         return [
